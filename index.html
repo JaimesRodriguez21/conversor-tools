@@ -78,7 +78,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  .wrap { width: 100%; max-width: 780px; }
+  .wrap { width: 100%; max-width: 780px; min-width: 0; }
 
   .hero { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 0.4rem; }
   .hero-icon {
@@ -93,35 +93,55 @@
   h1 { font-size: 1.5rem; margin: 0; letter-spacing: -0.01em; font-weight: 700; }
   .subtitle { color: var(--muted); margin: 0.55rem 0 1.75rem; font-size: 0.94rem; line-height: 1.5; max-width: 62ch; }
 
-  .tabs {
-    display: inline-flex;
-    gap: 0.25rem;
-    margin-bottom: 1.1rem;
-    background: var(--panel-soft);
-    border: 1px solid var(--border);
-    padding: 0.28rem;
-    border-radius: 999px;
-    flex-wrap: wrap;
+  /* Grilla de herramientas: cada tarjeta explica que hace la herramienta
+     (icono + nombre + descripcion corta), en vez de pestanas apretadas que
+     obligan a adivinar o hacer scroll horizontal. Se acomoda sola al ancho
+     disponible gracias a auto-fill, sin necesidad de media queries. */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 0.6rem;
+    margin-bottom: 1.4rem;
   }
-  .tab-btn {
-    padding: 0.55rem 1.05rem;
-    border-radius: 999px;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    font-size: 0.84rem;
-    font-weight: 600;
-    cursor: pointer;
+  .tool-card {
     display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    transition: color 0.15s ease, background 0.2s ease;
+    align-items: flex-start;
+    gap: 0.7rem;
+    text-align: left;
+    padding: 0.85rem 0.95rem;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--border);
+    background: var(--panel-soft);
+    cursor: pointer;
     font-family: inherit;
-    white-space: nowrap;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
   }
-  .tab-btn svg { width: 15px; height: 15px; opacity: 0.75; }
-  .tab-btn.active { background: var(--panel); color: var(--accent); box-shadow: var(--shadow); }
-  .tab-btn.active svg { opacity: 1; }
+  .tool-card:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
+  .tool-card-icon {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .tool-card-icon svg { width: 16px; height: 16px; color: var(--muted); transition: color 0.15s ease; }
+  .tool-card-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+  .tool-card-name { font-size: 0.87rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .tool-card-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+
+  .tool-card.active {
+    background: var(--panel);
+    border-color: var(--accent);
+    box-shadow: var(--shadow), 0 0 0 3px var(--accent-soft);
+  }
+  .tool-card.active .tool-card-icon {
+    background: linear-gradient(140deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+  }
+  .tool-card.active .tool-card-icon svg { color: #fff; }
+  .tool-card.active .tool-card-name { color: var(--accent); }
 
   .panel {
     background: var(--panel);
@@ -171,6 +191,40 @@
     color: var(--text);
     font-family: var(--mono);
   }
+
+  .zone-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.3rem;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    z-index: 20;
+  }
+  .zone-dropdown.open { display: block; }
+  .zone-option {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.85rem;
+    font-family: var(--mono);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .zone-option .zone-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .zone-option .zone-offset { color: var(--muted); font-size: 0.74rem; flex-shrink: 0; }
+  .zone-option:hover, .zone-option.highlighted { background: var(--accent-soft); color: var(--accent); }
+  .zone-option:hover .zone-offset, .zone-option.highlighted .zone-offset { color: var(--accent); }
+  .zone-option.zone-local { font-weight: 700; }
+  .zone-empty { padding: 0.6rem 0.85rem; font-size: 0.83rem; color: var(--muted); }
 
   .row { margin-bottom: 1.15rem; }
   .row:last-child { margin-bottom: 0; }
@@ -233,6 +287,31 @@
   button.chip-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
   button:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+
+  /* El outline por defecto del navegador es rectangular y sobresale de los
+     elementos con border-radius grande (pildoras/circulos). Lo reemplazamos
+     por un anillo con box-shadow que sigue la forma redondeada. */
+  button, .tool-card, .file-drop, input[type="text"], textarea, select, .zone-option {
+    outline: none;
+  }
+  .tool-card:focus-visible {
+    box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 2px var(--accent);
+  }
+  button.primary:focus-visible {
+    box-shadow: 0 6px 16px -6px rgba(102,83,230,0.55), 0 0 0 3px var(--accent-soft), 0 0 0 2px var(--accent);
+  }
+  button.secondary:focus-visible,
+  button.chip-btn:focus-visible {
+    box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 2px var(--accent);
+  }
+  .file-drop:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .zone-option:focus-visible {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
 
   .status {
     margin-top: 1.1rem;
@@ -305,6 +384,43 @@
     gap: 0.4rem;
   }
   footer svg { width: 13px; height: 13px; }
+
+  /* ---------- Responsive (mobile) ---------- */
+  @media (max-width: 640px) {
+    body { padding: 1.5rem 0.85rem 3rem; }
+
+    .hero { gap: 0.7rem; }
+    .hero-icon { width: 38px; height: 38px; border-radius: 11px; }
+    .hero-icon svg { width: 19px; height: 19px; }
+    h1 { font-size: 1.22rem; }
+    .subtitle { font-size: 0.86rem; margin: 0.5rem 0 1.4rem; }
+
+    /* En mobile las tarjetas de herramientas pasan a una sola columna,
+       mas facil de leer y tocar que una grilla apretada. */
+    .tool-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+    .tool-card { padding: 0.75rem 0.85rem; }
+    .tool-card-desc { font-size: 0.74rem; }
+
+    .panel { padding: 1.1rem; border-radius: var(--radius-md); }
+
+    /* Evita el zoom automatico de iOS Safari al enfocar campos con
+       fuente menor a 16px. */
+    textarea, input[type="text"], select { font-size: 16px; }
+    textarea { min-height: 150px; }
+
+    .file-drop { padding: 1.4rem 1rem; }
+
+    /* Los botones de accion se apilan a lo ancho completo para que sean
+       faciles de tocar y no se corten en pantallas angostas. */
+    .actions { flex-direction: column; align-items: stretch; }
+    .actions button.primary,
+    .actions button.secondary { width: 100%; justify-content: center; }
+
+    .output-head { align-items: flex-start; }
+    .meta-chip { font-size: 0.7rem; }
+
+    .zone-dropdown { max-height: 220px; }
+  }
 </style>
 </head>
 <body>
@@ -321,18 +437,51 @@
   </div>
   <p class="subtitle">Pega un bloque de texto en hexadecimal o base64 (aunque venga rodeado de otras palabras o codigo) y recupera el archivo original, o convierte cualquier archivo a hexadecimal / base64.</p>
 
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="decodeHex">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Hex &rarr; Archivo
+  <div class="tool-grid">
+    <button class="tool-card active" data-tab="decodeHex">
+      <span class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="tool-card-text">
+        <span class="tool-card-name">Hex &rarr; Archivo</span>
+        <span class="tool-card-desc">Pega texto hexadecimal y descarga el archivo original</span>
+      </span>
     </button>
-    <button class="tab-btn" data-tab="decodeB64">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Base64 &rarr; Archivo
+    <button class="tool-card" data-tab="decodeB64">
+      <span class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="tool-card-text">
+        <span class="tool-card-name">Base64 &rarr; Archivo</span>
+        <span class="tool-card-desc">Pega texto en base64 y descarga el archivo original</span>
+      </span>
     </button>
-    <button class="tab-btn" data-tab="encode">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 20V9m0 0 4 4m-4-4-4 4M5 5h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Archivo &rarr; Hex / Base64
+    <button class="tool-card" data-tab="encode">
+      <span class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 20V9m0 0 4 4m-4-4-4 4M5 5h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="tool-card-text">
+        <span class="tool-card-name">Archivo &rarr; Hex / Base64</span>
+        <span class="tool-card-desc">Sube un archivo y compartelo como texto</span>
+      </span>
+    </button>
+    <button class="tool-card" data-tab="csvJson">
+      <span class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 9h16M4 14h16M9 4v16" stroke="currentColor" stroke-width="1.6"/></svg>
+      </span>
+      <span class="tool-card-text">
+        <span class="tool-card-name">CSV &harr; JSON</span>
+        <span class="tool-card-desc">Convierte datos tabulares a JSON y viceversa</span>
+      </span>
+    </button>
+    <button class="tool-card" data-tab="timestamp">
+      <span class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="tool-card-text">
+        <span class="tool-card-name">Timestamp &harr; Zona horaria</span>
+        <span class="tool-card-desc">Traduce fechas y timestamps entre zonas horarias</span>
+      </span>
     </button>
   </div>
 
@@ -422,6 +571,72 @@
     </div>
   </div>
 
+  <div class="panel" id="panel-csvJson">
+    <div class="row">
+      <label>Direccion</label>
+      <p class="hint">Elige si quieres convertir de CSV a JSON o de JSON a CSV.</p>
+      <div class="format-toggle">
+        <button class="chip-btn active" id="csvDirCsvToJson" type="button">CSV &rarr; JSON</button>
+        <button class="chip-btn" id="csvDirJsonToCsv" type="button">JSON &rarr; CSV</button>
+      </div>
+    </div>
+    <div class="row">
+      <label for="csvJsonInput" id="csvJsonInputLabel">CSV de entrada</label>
+      <p class="hint" id="csvJsonInputHint">Pega tu CSV (con encabezados en la primera fila). Se detecta automaticamente coma, punto y coma o tabulador como separador.</p>
+      <textarea id="csvJsonInput" placeholder="id,nombre,email&#10;1,Juan Perez,juan@correo.com&#10;2,Ana Diaz,ana@correo.com"></textarea>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btnCsvJsonConvert">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 7h10M7 12h10M7 17h6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Convertir
+      </button>
+      <button class="secondary" id="btnCsvJsonClear">Limpiar</button>
+    </div>
+    <div class="status" id="csvJsonStatus"></div>
+    <div id="csvJsonOutputRow" style="display:none;">
+      <hr class="divider">
+      <div class="row">
+        <div class="output-head">
+          <label for="csvJsonOutput" style="margin-bottom:0;" id="csvJsonOutputLabel">Resultado (JSON)</label>
+        </div>
+        <textarea id="csvJsonOutput" readonly></textarea>
+      </div>
+      <div class="actions">
+        <button class="secondary" id="btnCsvJsonCopy">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.6"/></svg>
+          Copiar al portapapeles
+        </button>
+        <button class="secondary" id="btnCsvJsonDownload">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Descargar archivo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-timestamp">
+    <div class="row">
+      <label for="tsInput">Timestamp o fecha</label>
+      <p class="hint">Pega un timestamp Unix (segundos o milisegundos), una fecha ISO 8601, o cualquier formato de fecha reconocible. Tambien puedes dejarlo vacio y presionar "Usar ahora".</p>
+      <input type="text" id="tsInput" placeholder="1735689600, 1735689600000, o 2025-01-01T00:00:00Z">
+    </div>
+    <div class="row" style="position:relative;">
+      <label for="tsZoneInput">Convertir a esta zona horaria</label>
+      <input type="text" id="tsZoneInput" autocomplete="off" placeholder="Escribe para buscar, ej: bogota, madrid, tokyo...">
+      <input type="hidden" id="tsZoneValue">
+      <div id="tsZoneDropdown" class="zone-dropdown"></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btnTsConvert">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="1.7"/><path d="M12 7v5l3.5 2" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Convertir
+      </button>
+      <button class="secondary" id="btnTsNow">Usar ahora</button>
+      <button class="secondary" id="btnTsClear">Limpiar</button>
+    </div>
+    <div class="status" id="tsStatus"></div>
+  </div>
+
   <footer>
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2 3 6v6c0 5 4 9 9 10 5-1 9-5 9-10V6l-9-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
     Todo se procesa localmente en tu navegador; nada se sube a ningun servidor.
@@ -442,19 +657,27 @@
   var ICON_INFO = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5M12 8v.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
   var ICONS = { ok: ICON_OK, err: ICON_ERR, warn: ICON_WARN, info: ICON_INFO };
 
-  // ---------- Tabs ----------
-  var tabButtons = document.querySelectorAll(".tab-btn");
+  // ---------- Selector de herramientas ----------
+  var toolCards = document.querySelectorAll(".tool-card");
   var panels = {
     decodeHex: document.getElementById("panel-decodeHex"),
     decodeB64: document.getElementById("panel-decodeB64"),
-    encode: document.getElementById("panel-encode")
+    encode: document.getElementById("panel-encode"),
+    csvJson: document.getElementById("panel-csvJson"),
+    timestamp: document.getElementById("panel-timestamp")
   };
-  tabButtons.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      tabButtons.forEach(function (b) { b.classList.remove("active"); });
+  toolCards.forEach(function (card) {
+    card.addEventListener("click", function () {
+      toolCards.forEach(function (c) { c.classList.remove("active"); });
       Object.keys(panels).forEach(function (k) { panels[k].classList.remove("active"); });
-      btn.classList.add("active");
-      panels[btn.dataset.tab].classList.add("active");
+      card.classList.add("active");
+      var panel = panels[card.dataset.tab];
+      panel.classList.add("active");
+      // En pantallas angostas la grilla ocupa varias filas; llevamos la
+      // vista al panel elegido para que no haya que buscarlo con scroll.
+      if (window.innerWidth < 640) {
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   });
 
@@ -747,6 +970,544 @@
     var base = selectedFile ? selectedFile.name : "archivo";
     triggerDownload(blob, base + ".gz");
   });
+
+  // ---------- Pestana: CSV <-> JSON ----------
+  (function () {
+    var input = document.getElementById("csvJsonInput");
+    var inputLabel = document.getElementById("csvJsonInputLabel");
+    var inputHint = document.getElementById("csvJsonInputHint");
+    var output = document.getElementById("csvJsonOutput");
+    var outputLabel = document.getElementById("csvJsonOutputLabel");
+    var outputRow = document.getElementById("csvJsonOutputRow");
+    var statusEl = document.getElementById("csvJsonStatus");
+    var btnConvert = document.getElementById("btnCsvJsonConvert");
+    var btnClear = document.getElementById("btnCsvJsonClear");
+    var btnCopy = document.getElementById("btnCsvJsonCopy");
+    var btnDownload = document.getElementById("btnCsvJsonDownload");
+    var dirCsvToJson = document.getElementById("csvDirCsvToJson");
+    var dirJsonToCsv = document.getElementById("csvDirJsonToCsv");
+    var direction = "csvToJson";
+    var lastResult = "";
+    var lastFilename = "resultado.json";
+
+    function setDirection(dir) {
+      direction = dir;
+      output.value = "";
+      outputRow.style.display = "none";
+      clearStatus(statusEl);
+      if (dir === "csvToJson") {
+        dirCsvToJson.classList.add("active");
+        dirJsonToCsv.classList.remove("active");
+        inputLabel.textContent = "CSV de entrada";
+        inputHint.textContent = "Pega tu CSV (con encabezados en la primera fila). Se detecta automaticamente coma, punto y coma o tabulador como separador.";
+        input.placeholder = "id,nombre,email\n1,Juan Perez,juan@correo.com\n2,Ana Diaz,ana@correo.com";
+      } else {
+        dirJsonToCsv.classList.add("active");
+        dirCsvToJson.classList.remove("active");
+        inputLabel.textContent = "JSON de entrada";
+        inputHint.textContent = "Pega un array de objetos JSON (ej. [{\"id\":1,\"nombre\":\"Juan\"}]). Las claves de todos los objetos se combinan como columnas.";
+        input.placeholder = '[\n  {"id": 1, "nombre": "Juan Perez", "email": "juan@correo.com"},\n  {"id": 2, "nombre": "Ana Diaz", "email": "ana@correo.com"}\n]';
+      }
+    }
+    dirCsvToJson.addEventListener("click", function () { setDirection("csvToJson"); });
+    dirJsonToCsv.addEventListener("click", function () { setDirection("jsonToCsv"); });
+
+    // Parser CSV robusto: soporta comillas, comas/;/tab, saltos de linea dentro de campos.
+    function detectDelimiter(text) {
+      var firstLine = text.split(/\r?\n/, 1)[0] || "";
+      var candidates = [",", ";", "\t"];
+      var best = ",", bestCount = -1;
+      candidates.forEach(function (d) {
+        var count = firstLine.split(d).length - 1;
+        if (count > bestCount) { bestCount = count; best = d; }
+      });
+      return best;
+    }
+
+    function parseCSV(text, delimiter) {
+      var rows = [];
+      var row = [];
+      var field = "";
+      var inQuotes = false;
+      var i = 0;
+      var len = text.length;
+      while (i < len) {
+        var ch = text[i];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+            inQuotes = false; i++; continue;
+          }
+          field += ch; i++; continue;
+        } else {
+          if (ch === '"') { inQuotes = true; i++; continue; }
+          if (ch === delimiter) { row.push(field); field = ""; i++; continue; }
+          if (ch === "\r") { i++; continue; }
+          if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+          field += ch; i++; continue;
+        }
+      }
+      row.push(field);
+      rows.push(row);
+      // Elimina filas totalmente vacias al final
+      while (rows.length && rows[rows.length - 1].length === 1 && rows[rows.length - 1][0] === "") rows.pop();
+      return rows;
+    }
+
+    function csvToJson(text) {
+      var delimiter = detectDelimiter(text);
+      var rows = parseCSV(text, delimiter);
+      if (!rows.length) throw new Error("No se encontraron filas.");
+      var headers = rows[0];
+      var warnings = [];
+
+      // Encabezados vacios
+      var emptyHeaderCount = headers.filter(function (h) { return !h || !h.trim(); }).length;
+      if (emptyHeaderCount > 0) {
+        warnings.push(emptyHeaderCount + " columna(s) sin nombre de encabezado (se usara col0, col1, etc).");
+      }
+      // Encabezados duplicados
+      var seenHeaders = {};
+      var dupHeaders = [];
+      headers.forEach(function (h) {
+        var key = (h || "").trim();
+        if (!key) return;
+        if (seenHeaders[key]) { if (dupHeaders.indexOf(key) === -1) dupHeaders.push(key); }
+        else seenHeaders[key] = true;
+      });
+      if (dupHeaders.length > 0) {
+        warnings.push("Encabezados duplicados: " + dupHeaders.join(", ") + ". Los valores repetidos se sobrescribiran entre si.");
+      }
+      // Numero de columnas inconsistente entre filas
+      var mismatchRows = [];
+      for (var r = 1; r < rows.length; r++) {
+        if (rows[r].length !== headers.length) mismatchRows.push(r + 1); // +1: numero de fila visible (1 = encabezado)
+      }
+      if (mismatchRows.length > 0) {
+        var shown = mismatchRows.slice(0, 8).join(", ") + (mismatchRows.length > 8 ? "..." : "");
+        warnings.push("La(s) fila(s) " + shown + " tiene(n) un numero de columnas distinto al encabezado (" + headers.length + "). Los campos faltantes se completan vacios y los sobrantes se ignoran.");
+      }
+
+      var out = [];
+      for (var r2 = 1; r2 < rows.length; r2++) {
+        var obj = {};
+        for (var c = 0; c < headers.length; c++) {
+          var key2 = (headers[c] && headers[c].trim()) || ("col" + c);
+          var val = rows[r2][c] !== undefined ? rows[r2][c] : "";
+          obj[key2] = val;
+        }
+        out.push(obj);
+      }
+      return { json: out, delimiter: delimiter, rowCount: out.length, colCount: headers.length, warnings: warnings };
+    }
+
+    // Convierte el indice de caracter de un error de JSON.parse en linea/columna legible.
+    function lineColFromIndex(text, index) {
+      var lines = text.slice(0, index).split("\n");
+      return { line: lines.length, col: lines[lines.length - 1].length + 1 };
+    }
+
+    function parseJsonStrict(text) {
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        var match = /position (\d+)/.exec(e.message);
+        if (match) {
+          var pos = parseInt(match[1], 10);
+          var lc = lineColFromIndex(text, pos);
+          throw new Error("JSON invalido cerca de la linea " + lc.line + ", columna " + lc.col + " (" + e.message + ").");
+        }
+        throw new Error("JSON invalido: " + e.message);
+      }
+    }
+
+    function csvField(val) {
+      var s = val === null || val === undefined ? "" : String(val);
+      if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function jsonToCsv(text) {
+      var data = parseJsonStrict(text);
+      var warnings = [];
+      if (!Array.isArray(data)) {
+        if (typeof data === "object" && data !== null) data = [data];
+        else throw new Error("El JSON debe ser un array de objetos, ej: [{\"campo\":\"valor\"}], o un objeto individual.");
+      }
+      if (data.length === 0) throw new Error("El array JSON esta vacio, no hay datos que convertir.");
+
+      var validObjects = [];
+      var skipped = 0;
+      data.forEach(function (item) {
+        if (item && typeof item === "object" && !Array.isArray(item)) validObjects.push(item);
+        else skipped++;
+      });
+      if (validObjects.length === 0) {
+        throw new Error("Ningun elemento del array es un objeto valido ({...}). CSV necesita una lista de objetos.");
+      }
+      if (skipped > 0) {
+        warnings.push(skipped + " elemento(s) del array no son objetos validos y fueron ignorados.");
+      }
+
+      var headers = [];
+      var seen = {};
+      validObjects.forEach(function (obj) {
+        Object.keys(obj).forEach(function (k) {
+          if (!seen[k]) { seen[k] = true; headers.push(k); }
+        });
+      });
+      if (headers.length === 0) {
+        throw new Error("Los objetos no tienen ninguna propiedad; no hay columnas que generar.");
+      }
+
+      var lines = [headers.map(csvField).join(",")];
+      validObjects.forEach(function (obj) {
+        var line = headers.map(function (h) {
+          var v = obj[h];
+          if (v !== null && typeof v === "object") v = JSON.stringify(v);
+          if (v === undefined) v = "";
+          return csvField(v);
+        });
+        lines.push(line.join(","));
+      });
+      return { csv: lines.join("\r\n"), rowCount: validObjects.length, colCount: headers.length, warnings: warnings };
+    }
+
+    // Deteccion de formato incorrecto antes de intentar convertir: evita mensajes
+    // confusos cuando el usuario pego JSON en modo CSV o viceversa.
+    function looksLikeJson(text) {
+      var t = text.trim();
+      return t.length > 0 && (t[0] === "{" || t[0] === "[");
+    }
+
+    function checkFormatMatchesDirection(raw) {
+      var jsonLike = looksLikeJson(raw);
+      if (direction === "csvToJson" && jsonLike) {
+        // Confirmamos que realmente parsea como JSON antes de advertir, para no
+        // bloquear un CSV cuyo primer campo empiece con { o [ por casualidad.
+        try {
+          JSON.parse(raw);
+          throw new Error("__SWITCH__:Esto parece ser JSON, no CSV. Cambia a modo \"JSON &rarr; CSV\" para convertirlo.");
+        } catch (e) {
+          if (e.message.indexOf("__SWITCH__:") === 0) throw new Error(e.message.slice(11));
+          // No era JSON valido, puede ser CSV legitimo: seguimos normal.
+        }
+      }
+      if (direction === "jsonToCsv" && !jsonLike) {
+        throw new Error("Esto no parece JSON (deberia comenzar con { o [). Si tienes un CSV, cambia a modo \"CSV &rarr; JSON\".");
+      }
+    }
+
+    btnConvert.addEventListener("click", function () {
+      var raw = input.value;
+      if (!raw || !raw.trim()) {
+        setStatus(statusEl, "err", "Pega primero el contenido a convertir.");
+        return;
+      }
+      try {
+        checkFormatMatchesDirection(raw);
+        if (direction === "csvToJson") {
+          var res = csvToJson(raw);
+          lastResult = JSON.stringify(res.json, null, 2);
+          lastFilename = "resultado.json";
+          output.value = lastResult;
+          outputLabel.textContent = "Resultado (JSON)";
+          outputRow.style.display = "block";
+          var delimName = res.delimiter === "," ? "coma" : res.delimiter === ";" ? "punto y coma" : "tabulador";
+          var msg = '<div class="meta-chip-row">' +
+            '<span class="meta-chip">' + res.rowCount + " fila(s)</span>" +
+            '<span class="meta-chip">' + res.colCount + " columna(s)</span>" +
+            '<span class="meta-chip">Delimitador: ' + delimName + "</span></div>";
+          if (res.warnings.length) {
+            msg = "Convertido con advertencias." + msg + '<div style="margin-top:0.5rem;font-weight:500;">' + res.warnings.join("<br>") + "</div>";
+            setStatus(statusEl, "warn", msg);
+          } else {
+            setStatus(statusEl, "ok", "Convertido correctamente." + msg);
+          }
+        } else {
+          var res2 = jsonToCsv(raw);
+          lastResult = res2.csv;
+          lastFilename = "resultado.csv";
+          output.value = lastResult;
+          outputLabel.textContent = "Resultado (CSV)";
+          outputRow.style.display = "block";
+          var msg2 = '<div class="meta-chip-row">' +
+            '<span class="meta-chip">' + res2.rowCount + " fila(s)</span>" +
+            '<span class="meta-chip">' + res2.colCount + " columna(s)</span></div>";
+          if (res2.warnings.length) {
+            msg2 = "Convertido con advertencias." + msg2 + '<div style="margin-top:0.5rem;font-weight:500;">' + res2.warnings.join("<br>") + "</div>";
+            setStatus(statusEl, "warn", msg2);
+          } else {
+            setStatus(statusEl, "ok", "Convertido correctamente." + msg2);
+          }
+        }
+      } catch (err) {
+        outputRow.style.display = "none";
+        setStatus(statusEl, "err", err.message);
+      }
+    });
+
+    btnClear.addEventListener("click", function () {
+      input.value = "";
+      output.value = "";
+      outputRow.style.display = "none";
+      clearStatus(statusEl);
+    });
+
+    btnCopy.addEventListener("click", function () {
+      output.select();
+      var done = function () { setStatus(statusEl, "ok", "Resultado copiado al portapapeles."); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(output.value).then(done).catch(function () { document.execCommand("copy"); done(); });
+      } else {
+        document.execCommand("copy");
+        done();
+      }
+    });
+
+    btnDownload.addEventListener("click", function () {
+      if (!lastResult) return;
+      var type = lastFilename.endsWith(".json") ? "application/json" : "text/csv";
+      var blob = new Blob([lastResult], { type: type });
+      triggerDownload(blob, lastFilename);
+    });
+  })();
+
+  // ---------- Pestana: Timestamp <-> Zona horaria ----------
+  (function () {
+    var tsInput = document.getElementById("tsInput");
+    var zoneInput = document.getElementById("tsZoneInput");
+    var zoneValue = document.getElementById("tsZoneValue");
+    var zoneDropdown = document.getElementById("tsZoneDropdown");
+    var statusEl = document.getElementById("tsStatus");
+    var btnConvert = document.getElementById("btnTsConvert");
+    var btnNow = document.getElementById("btnTsNow");
+    var btnClear = document.getElementById("btnTsClear");
+
+    var COMMON_ZONES = [
+      "UTC", "America/Bogota", "America/Mexico_City", "America/Lima", "America/Santiago",
+      "America/Argentina/Buenos_Aires", "America/Sao_Paulo", "America/Caracas", "America/New_York",
+      "America/Chicago", "America/Denver", "America/Los_Angeles", "Europe/Madrid", "Europe/London",
+      "Europe/Paris", "Europe/Berlin", "Asia/Tokyo", "Asia/Shanghai", "Asia/Kolkata", "Asia/Dubai",
+      "Australia/Sydney"
+    ];
+
+    var localZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    var allZones = COMMON_ZONES;
+    try {
+      if (typeof Intl.supportedValuesOf === "function") allZones = Intl.supportedValuesOf("timeZone");
+    } catch (e) { /* usa fallback */ }
+    if (allZones.indexOf(localZone) === -1) allZones = [localZone].concat(allZones);
+
+    function zoneOffsetLabel(zone) {
+      try {
+        var fmt = new Intl.DateTimeFormat("en", { timeZone: zone, timeZoneName: "shortOffset" });
+        var parts = fmt.formatToParts(new Date());
+        var offset = "";
+        parts.forEach(function (p) { if (p.type === "timeZoneName") offset = p.value; });
+        return offset;
+      } catch (e) { return ""; }
+    }
+
+    // Etiqueta amigable de busqueda: separa "America/Bogota" en palabras y agrega
+    // sinonimos comunes en espanol para que la busqueda sea mas natural.
+    var ZONE_ALIASES = {
+      "America/Bogota": "colombia bogota",
+      "America/Mexico_City": "mexico cdmx ciudad de mexico",
+      "America/Lima": "peru lima",
+      "America/Santiago": "chile santiago",
+      "America/Argentina/Buenos_Aires": "argentina buenos aires",
+      "America/Sao_Paulo": "brasil sao paulo brazil",
+      "America/Caracas": "venezuela caracas",
+      "America/New_York": "estados unidos usa nueva york este eastern",
+      "America/Chicago": "estados unidos usa central",
+      "America/Denver": "estados unidos usa montana mountain",
+      "America/Los_Angeles": "estados unidos usa california pacifico pacific",
+      "Europe/Madrid": "espana madrid",
+      "Europe/London": "inglaterra londres uk reino unido",
+      "Europe/Paris": "francia paris",
+      "Europe/Berlin": "alemania berlin germany",
+      "Asia/Tokyo": "japon tokyo japan",
+      "Asia/Shanghai": "china shanghai",
+      "Asia/Kolkata": "india",
+      "Asia/Dubai": "emiratos dubai uae",
+      "Australia/Sydney": "australia sydney",
+      "UTC": "utc gmt tiempo universal"
+    };
+
+    function zoneSearchText(zone) {
+      var base = zone.toLowerCase().replace(/_/g, " ").replace(/\//g, " ");
+      return base + " " + (ZONE_ALIASES[zone] || "");
+    }
+
+    var highlightedIndex = -1;
+    var currentMatches = [];
+
+    function selectZone(zone) {
+      zoneValue.value = zone;
+      var label = zone === localZone ? "Mi zona local (" + zone + ")" : zone;
+      zoneInput.value = label;
+      closeDropdown();
+    }
+
+    function renderDropdown(filterText) {
+      var q = (filterText || "").trim().toLowerCase();
+      var matches;
+      if (!q) {
+        matches = allZones.slice(0, 60);
+      } else {
+        matches = allZones.filter(function (z) { return zoneSearchText(z).indexOf(q) !== -1; }).slice(0, 60);
+      }
+      currentMatches = matches;
+      highlightedIndex = matches.length ? 0 : -1;
+
+      zoneDropdown.innerHTML = "";
+      if (!matches.length) {
+        var empty = document.createElement("div");
+        empty.className = "zone-empty";
+        empty.textContent = "Sin resultados para \"" + filterText + "\".";
+        zoneDropdown.appendChild(empty);
+      } else {
+        matches.forEach(function (z, idx) {
+          var opt = document.createElement("div");
+          opt.className = "zone-option" + (z === localZone ? " zone-local" : "") + (idx === highlightedIndex ? " highlighted" : "");
+          opt.dataset.zone = z;
+          var nameSpan = document.createElement("span");
+          nameSpan.className = "zone-name";
+          nameSpan.textContent = z === localZone ? "Mi zona local (" + z + ")" : z;
+          var offsetSpan = document.createElement("span");
+          offsetSpan.className = "zone-offset";
+          offsetSpan.textContent = zoneOffsetLabel(z);
+          opt.appendChild(nameSpan);
+          opt.appendChild(offsetSpan);
+          opt.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            selectZone(z);
+          });
+          zoneDropdown.appendChild(opt);
+        });
+      }
+      openDropdown();
+    }
+
+    function openDropdown() { zoneDropdown.classList.add("open"); }
+    function closeDropdown() { zoneDropdown.classList.remove("open"); }
+
+    function updateHighlight() {
+      var opts = zoneDropdown.querySelectorAll(".zone-option");
+      opts.forEach(function (o, idx) {
+        o.classList.toggle("highlighted", idx === highlightedIndex);
+      });
+      if (opts[highlightedIndex]) {
+        opts[highlightedIndex].scrollIntoView({ block: "nearest" });
+      }
+    }
+
+    zoneInput.addEventListener("focus", function () {
+      renderDropdown(zoneInput.value === ("Mi zona local (" + localZone + ")") ? "" : zoneInput.value);
+    });
+    zoneInput.addEventListener("input", function () {
+      zoneValue.value = "";
+      renderDropdown(zoneInput.value);
+    });
+    zoneInput.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (!zoneDropdown.classList.contains("open")) { renderDropdown(zoneInput.value); return; }
+        if (currentMatches.length) { highlightedIndex = (highlightedIndex + 1) % currentMatches.length; updateHighlight(); }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (currentMatches.length) { highlightedIndex = (highlightedIndex - 1 + currentMatches.length) % currentMatches.length; updateHighlight(); }
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (highlightedIndex >= 0 && currentMatches[highlightedIndex]) selectZone(currentMatches[highlightedIndex]);
+      } else if (e.key === "Escape") {
+        closeDropdown();
+      }
+    });
+    document.addEventListener("click", function (e) {
+      if (!zoneInput.contains(e.target) && !zoneDropdown.contains(e.target)) closeDropdown();
+    });
+
+    // Zona inicial: la local del navegador.
+    selectZone(localZone);
+
+    function parseInputToDate(raw) {
+      raw = raw.trim();
+      if (/^-?\d+$/.test(raw)) {
+        var num = parseInt(raw, 10);
+        // Heuristica: 10 digitos ~ segundos, 13 digitos ~ milisegundos
+        if (raw.replace("-", "").length <= 10) return new Date(num * 1000);
+        return new Date(num);
+      }
+      var d = new Date(raw);
+      if (isNaN(d.getTime())) throw new Error("No se pudo interpretar la fecha o timestamp.");
+      return d;
+    }
+
+    function formatInZone(date, zone) {
+      var fmt = new Intl.DateTimeFormat("es", {
+        timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+        weekday: "long"
+      });
+      var parts = fmt.formatToParts(date);
+      var map = {};
+      parts.forEach(function (p) { map[p.type] = p.value; });
+      var offsetFmt = new Intl.DateTimeFormat("en", { timeZone: zone, timeZoneName: "shortOffset" });
+      var offsetParts = offsetFmt.formatToParts(date);
+      var offset = "";
+      offsetParts.forEach(function (p) { if (p.type === "timeZoneName") offset = p.value; });
+      return {
+        text: map.weekday + ", " + map.year + "-" + map.month + "-" + map.day + " " + map.hour + ":" + map.minute + ":" + map.second,
+        offset: offset
+      };
+    }
+
+    function runConvert() {
+      try {
+        var raw = tsInput.value;
+        if (!raw || !raw.trim()) {
+          setStatus(statusEl, "err", "Escribe un timestamp o fecha, o usa \"Usar ahora\".");
+          return;
+        }
+        if (!zoneValue.value) {
+          setStatus(statusEl, "err", "Elige una zona horaria de la lista (escribe para buscarla).");
+          return;
+        }
+        var date = parseInputToDate(raw);
+        var zone = zoneValue.value;
+        var zoneResult = formatInZone(date, zone);
+        var utcResult = formatInZone(date, "UTC");
+        var unixSec = Math.floor(date.getTime() / 1000);
+        var unixMs = date.getTime();
+        var iso = date.toISOString();
+        var msg = '<div class="meta-chip-row">' +
+          '<span class="meta-chip">Unix: ' + unixSec + " s</span>" +
+          '<span class="meta-chip">Unix: ' + unixMs + " ms</span>" +
+          '<span class="meta-chip">ISO 8601: ' + iso + "</span></div>" +
+          '<div style="margin-top:0.6rem;">' +
+          '<strong>' + zone + ' (' + zoneResult.offset + '):</strong> ' + zoneResult.text +
+          '</div>' +
+          '<div style="margin-top:0.3rem;">' +
+          '<strong>UTC:</strong> ' + utcResult.text +
+          '</div>';
+        setStatus(statusEl, "ok", msg);
+      } catch (err) {
+        setStatus(statusEl, "err", err.message);
+      }
+    }
+
+    btnConvert.addEventListener("click", runConvert);
+    btnNow.addEventListener("click", function () {
+      tsInput.value = Math.floor(Date.now() / 1000);
+      runConvert();
+    });
+    btnClear.addEventListener("click", function () {
+      tsInput.value = "";
+      clearStatus(statusEl);
+    });
+  })();
 })();
 </script>
 </body>
